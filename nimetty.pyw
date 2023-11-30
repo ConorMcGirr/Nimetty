@@ -7,7 +7,7 @@ searchTerm = ''
 newNames = {}
 renameList = []
 directoryPath = ''
-appTitle = 'Bulk Rename'
+appTitle = 'Nimetty'
 
 # ================================== FUNCTIONS ==================================
 def getInitialDir():
