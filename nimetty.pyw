@@ -1,7 +1,8 @@
-'''Last updated 05/10/2023 ¦¦¦ Go to end for TODO and DONE lists'''
+'''Last updated 05/08/2024 ¦¦¦ Go to end for TODO and DONE lists'''
 import os, re, fileinput, sys, shutil, platform
 import tkinter as tk
 from tkinter import messagebox
+from tkinter.ttk import Combobox
 from tkinter.filedialog import askopenfilename, asksaveasfilename, askdirectory
 searchTerm = ''
 newNames = {}
@@ -13,7 +14,7 @@ appTitle = 'Nimetty'
 def getInitialDir():
     if platform.system().lower() == 'linux' and 'settings.conf' in os.listdir():
         cwd = os.getcwd()
-        print(f'Config file found: {cwd}\settings.conf')
+        print(f'Config file found: {cwd}\\settings.conf')
         with open(os.getcwd()+'/settings.conf', 'r') as settings:
             for line in settings:
                 if re.search('^initialdir *\t*=', line, re.IGNORECASE):
@@ -113,15 +114,25 @@ def search(dummy=None): # 'dummy' argument added to prevent error - "funcName() 
     overwriteTextBox(txtBox1, outputText)
     disableRenameBtns()
 
-def replace(dummy=None):
+def generateNewNames(**kwargs):
     global newNames
     newNames = {}
     replacementString = replaceBar.get()
     outputText = ''
+    renameMode = mode.get()
     for oldName in renameList:
-        # To get case sensititve string subsititution to work, the search term has to be compiled
-        searchTermCompiled = re.compile(searchTerm, re.IGNORECASE)
-        newName = searchTermCompiled.sub(replacementString, oldName)
+        match renameMode:
+            case "Replace with...":
+                # To get case sensititve string subsititution to work, the search term has to be compiled
+                searchTermCompiled = re.compile(searchTerm, re.IGNORECASE)
+                newName = searchTermCompiled.sub(replacementString, oldName)
+            case "Prefix with...":
+                newName = f"{replacementString}{oldName}"
+            case "Suffix with...":
+                oldNameList = oldName.split('.')
+                ext = oldNameList[-1]
+                fName = '.'.join(oldNameList[0:-1])
+                newName = f"{fName}{replacementString}.{ext}"
         newNames.update({oldName : newName})
         outputText += newName + '\n'
     overwriteTextBox(txtBox2, outputText)
@@ -195,9 +206,14 @@ searchBtn.bind('<Return>', search)
 frame3 = tk.Frame(window)
 # Create replace bar
 replaceBar = tk.Entry(frame3)
-replaceBar.bind('<Return>', replace)
-replaceBtn = tk.Button(frame3, text='Preview', command=replace)
-replaceBtn.bind('<Return>', replace)
+replaceBar.bind('<Return>', generateNewNames)
+replaceBtn = tk.Button(frame3, text='Preview', command=generateNewNames)
+replaceBtn.bind('<Return>', generateNewNames)
+# Create "mode" drop-down
+mode = tk.StringVar() 
+dropdownMode = Combobox(frame3, width = 13, textvariable = mode)
+dropdownMode['values'] = ('Replace with...', 'Prefix with...', 'Suffix with...')
+dropdownMode.current(0)
 # Create frame4
 frame4 = tk.Frame(window)
 # Create Rename and Copy buttons
@@ -218,7 +234,8 @@ txtBox1.grid(row=2, column=0, sticky='nsew')
 scrollbar1.grid(row=2, column=1, sticky='nsew')
 replaceBar.grid(row=0, column=1, sticky='ew', padx=5, pady=5)
 replaceBtn.grid(row=0, column=2)
-tk.Label(frame3, text='Replace with...').grid(row=0, column=0)
+#tk.Label(frame3, text='Replace with...').grid(row=0, column=0)
+dropdownMode.grid(row=0, column=0)
 txtBox2.grid(row=2, column=2, sticky='nsew')
 scrollbar2.grid(row=2, column=3, sticky='nsew')
 renameBtn.grid(row=1, column=1, padx=5, pady=5, sticky='e')
@@ -233,11 +250,12 @@ frame4.grid(row=1, column=0, columnspan=3, sticky='e')
 window.mainloop()
 
 # TO DO:
-# - Bug - Program quits when folder is changed (only when opened without terminal)
 # - Save / read most recent directory in settings (only read when on linux) (needs tested on linux)
 
 # DONE:
-# - Bug - Changes not being made to capitalisation e.g. NIMETTY won't rename to Nimetty
+# - Added prefix and suffix modes
+# - Bug fixed - Program quits when folder is changed (only when opened without terminal)
+# - Bug fixed - Changes not being made to capitalisation e.g. NIMETTY won't rename to Nimetty
 # - Bind ENTER key to all buttons
 # - Correct the order in which tab cycles through items
 # - Bug fixed - rename preview not working when Regex checked
